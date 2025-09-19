@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+    const emailInput = document.getElementById("email");
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -45,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="participants-container">
             ${participantsHTML}
           </div>
+            <button class="register-btn" data-activity="${name}">Register Student</button>
         `;
 
         activitiesList.appendChild(activityCard);
@@ -60,6 +62,10 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".delete-btn").forEach((button) => {
         button.addEventListener("click", handleUnregister);
       });
+        // Add event listeners to register buttons
+        document.querySelectorAll(".register-btn").forEach((button) => {
+          button.addEventListener("click", handleRegister);
+        });
     } catch (error) {
       activitiesList.innerHTML =
         "<p>Failed to load activities. Please try again later.</p>";
@@ -110,6 +116,44 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+    // Handle register functionality
+    async function handleRegister(event) {
+      const button = event.target;
+      const activity = button.getAttribute("data-activity");
+      const email = emailInput.value.trim();
+      if (!email) {
+        messageDiv.textContent = "Please enter a student email above before registering.";
+        messageDiv.className = "message error";
+        messageDiv.classList.remove("hidden");
+        return;
+      }
+      try {
+        const response = await fetch(
+          `/activities/${encodeURIComponent(activity)}/signup?email=${encodeURIComponent(email)}`,
+          {
+            method: "POST",
+          }
+        );
+        const result = await response.json();
+        if (response.ok) {
+          messageDiv.textContent = result.message || `Successfully registered ${email} for ${activity}!`;
+          messageDiv.className = "message success";
+          fetchActivities();
+        } else {
+          messageDiv.textContent = result.detail || "Failed to register student";
+          messageDiv.className = "message error";
+        }
+        messageDiv.classList.remove("hidden");
+        setTimeout(() => {
+          messageDiv.classList.add("hidden");
+        }, 5000);
+      } catch (error) {
+        messageDiv.textContent = "Failed to register. Please try again.";
+        messageDiv.className = "message error";
+        messageDiv.classList.remove("hidden");
+        console.error("Error registering:", error);
+      }
+    }
   // Handle form submission
   signupForm.addEventListener("submit", async (event) => {
     event.preventDefault();
